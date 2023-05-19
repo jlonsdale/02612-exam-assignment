@@ -1,10 +1,10 @@
 function [H, g, A, b, C, dl, du, l, u] = randomQPGenerator(n, density)   
-    m = n/2;
+    m = round(n/2);
     M = sprand(n, n, density);
     H = M * M' + 0.001 * eye(n); 
     g = randn(n, 1); % Generate a random vector g  
     % Generate random matrices A and C
-    % Create a full rank A matrix
+    % Create a full row rank A matrix
     A = 10*rand(n); 
     A = 0.5*(A+A')+n*eye(n);
     A = A(:,1:m); 
