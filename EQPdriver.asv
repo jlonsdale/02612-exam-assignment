@@ -1,6 +1,5 @@
-n_values = 50:25:600;
+n_values = 25:25:100;
 num_runs=20;
-
 num_values = length(n_values);
 
 diff_ldl_dense = zeros(1, num_values);
@@ -18,23 +17,34 @@ time_lu_sparse = zeros(1, num_values);
 time_null_space = zeros(1, num_values);
 time_range_space = zeros(1, num_values);
 
-
 for i = 1:length(n_values)
     n = n_values(i);
-    [H, g, A, b] = GenerateRandomEQP(n, 0.5, 0.5);
-    
+
+    [H, g, A, b] = GenerateRandomEQP(n, 0.9, 0.9);   
     tic;
     [x_true, fval_true] = quadprog(H, g', [], [], A, b);
     time_quadprog(i) = toc;
     
-    for run = 1:10
+    mse_ldl_dense = zeros(num_runs, 1);
+    mse_ldl_sparse = zeros(num_runs, 1);
+    mse_lu_dense = zeros(num_runs, 1);
+    mse_lu_sparse = zeros(num_runs, 1);
+    mse_null_space = zeros(num_runs, 1);
+    mse_range_space = zeros(num_runs, 1);
 
-        mse_ldl_dense = zeros(num_runs, 1);
-        mse_ldl_sparse = zeros(num_runs, 1);
-        mse_lu_dense = zeros(num_runs, 1);
-        mse_lu_sparse = zeros(num_runs, 1);
-        mse_null_space = zeros(num_runs, 1);
-        mse_range_space = zeros(num_runs, 1);
+    for run = 1:num_runs
+    [x_true, fval_true] = quadprog(H, g', [], [], A, b);
+
+
+        tic;
+        [x1] = EQPsolver(H, g, A, b, "LDLdense");
+        fval1 = calculateFval(x1, H, g);
+        time = toc;
+
+        if run == 1
+           time_ldl_dense(i) = time;
+        end
+
 
         tic;
         [x1] = EQPsolver(H, g, A, b, "LDLdense");
@@ -130,30 +140,39 @@ legend('LDL Dense', 'LDL Sparse', 'LU Dense', 'LU Sparse', 'Null Space', 'Range 
 hLegend = legend;
 
 % Increase the font size and other properties of the legend
-set(hLegend, 'FontSize', 14)  
+set(hLegend, 'FontSize', 14)
 grid on;
 
 
 % Plotting the computation times
 figure;
-plot(n_values, time_quadprog, '-o', 'DisplayName', 'Quadprog');
+plot(n_values, time_quadprog, '-o');
 hold on;
-plot(n_values, time_ldl_dense, '-o', 'DisplayName', 'LDL Dense');
-plot(n_values, time_ldl_sparse, '-o', 'DisplayName', 'LDL Sparse');
-plot(n_values, time_lu_dense, '-o', 'DisplayName', 'LU Dense');
-plot(n_values, time_lu_sparse, '-o', 'DisplayName', 'LU Sparse');
-plot(n_values, time_null_space, '-o', 'DisplayName', 'Null Space');
-plot(n_values, time_range_space, '-o', 'DisplayName', 'Range Space');
+plot(n_values, time_ldl_dense, '-o');
+plot(n_values, time_ldl_sparse, '-o');
+plot(n_values, time_lu_dense, '-o');
+plot(n_values, time_lu_sparse, '-o');
+plot(n_values, time_null_space, '-o');
+plot(n_values, time_range_space, '-o');
 
 xlabel('Problem size, n', 'FontSize', 16);
 ylabel('Computation Time, s', 'FontSize', 16);
 title('Computation Times of a range of problem sizes', 'FontSize', 16);
+
+legend('Quadprog', 'LDL Dense', 'LDL Sparse', 'LU Dense', 'LU Sparse', 'Null Space', 'Range Space');
 % Get the handle to the legend object
 hLegend = legend;
 
 % Increase the font size and other properties of the legend
-set(hLegend, 'FontSize', 14)  
+set(hLegend, 'FontSize', 14)
 grid on;
+
+% Adjust the figure properties for better readability
+set(gcf, 'Position', [100, 100, 800, 500]);  % Set figure size and position
+set(gca, 'FontName', 'Arial', 'FontSize', 12);  % Set axis font and font size
+set(gca, 'XMinorTick', 'on', 'YMinorTick', 'on');  % Add minor ticks to both axes
+box on;  % Add a box around the plot area
+
 
 function fval = calculateFval(x, H, g)
     fval = 0.5 * x' * H * x + g' * x;

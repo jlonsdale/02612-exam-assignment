@@ -1,5 +1,5 @@
-n_values = 25:25:100;
-num_runs=10;
+n_values = 25:25:400;
+num_runs=20;
 num_values = length(n_values);
 
 diff_ldl_dense = zeros(1, num_values);
@@ -18,21 +18,24 @@ time_null_space = zeros(1, num_values);
 time_range_space = zeros(1, num_values);
 
 for i = 1:length(n_values)
-    n = n_values(i);
+    n = n_values(i); 
+    mse_ldl_dense = zeros(num_runs, 1);
+    mse_ldl_sparse = zeros(num_runs, 1);
+    mse_lu_dense = zeros(num_runs, 1);
+    mse_lu_sparse = zeros(num_runs, 1);
+    mse_null_space = zeros(num_runs, 1);
+    mse_range_space = zeros(num_runs, 1);
 
-    [H, g, A, b] = GenerateRandomEQP(n, 0.2, 0.2);   
-    tic;
-    [x_true, fval_true] = quadprog(H, g', [], [], A, b);
-    time_quadprog(i) = toc;
-    
     for run = 1:num_runs
+        [H, g, A, b] = GenerateRandomEQP(n, 0.9, 0.9);   
 
-        mse_ldl_dense = zeros(num_runs, 1);
-        mse_ldl_sparse = zeros(num_runs, 1);
-        mse_lu_dense = zeros(num_runs, 1);
-        mse_lu_sparse = zeros(num_runs, 1);
-        mse_null_space = zeros(num_runs, 1);
-        mse_range_space = zeros(num_runs, 1);
+        tic;
+        [x_true, fval_true] = quadprog(H, g', [], [], A, b);
+        time = toc;
+
+        if run == 1
+        time_quadprog(i) = time;
+        end
 
         tic;
         [x1] = EQPsolver(H, g, A, b, "LDLdense");
