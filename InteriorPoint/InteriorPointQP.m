@@ -1,4 +1,4 @@
-function [x_sol] = InteriorPointQP(H, g, A, b, C, d, x0)
+function [x_sol, iter] = InteriorPointQP(H, g, A, b, C, d, x0)
 
 % Convert Cx >= d into an equality constraint using a slack variable
 %   A' x = b
@@ -124,14 +124,11 @@ while ~Converged && (iter<max_iter)
             (dualGap <= tol*0.01*dualGap0);
 
 
-hist = vertcat(hist, 0.5*x'*H*x+g'*x);
+    hist = vertcat(hist, 0.5*x'*H*x+g'*x);
 
 end
 
-hist;
-x_sol = x;
-disp(iter)
-if iter == max_iter
-    disp("hej")
-end
+x_sol =  x;
+iter
+
 end
