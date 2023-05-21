@@ -1,0 +1,94 @@
+function [x, lambda] = EQPsolver(H, g, A, b, type)
+% EQPsolver solves quadratic programming problems using different methods.
+
+% Inputs:
+%   H: Symmetric positive definite matrix
+%   g: Vector
+%   A: Matrix
+%   b: Vector
+%   type: String specifying the solution method
+
+    if ~issymmetric(H) || any(eig(H) <= 0)
+        error('H must be symmetric and positive definite');
+    end
+
+    [~,n] = size(H);
+    
+    if strcmp(type, 'LDLdense')
+        % Construct KKT system
+        [K, d] = constructKKTSystem(H,g,A,b);
+        % Apply LDL factorization
+        [L,D,p] = ldl(K,'vector');
+        solution(p) = L'\(D\(L\d(p)));
+        % Split solution into x and lambda
+        x = solution(1:n)';
+        lambda = solution(n+1:end)';
+    end
+
+    if strcmp(type, 'LDLsparse')
+        % Construct sparse KKT system
+        [K, d] = sparseConstructKKTSystem(H, g, A, b);
+        % Apply LDL factorization
+        [L,D,p] = ldl(K,'vector');
+        solution(p) = L'\(D\(L\d(p)));
+        % Split solution into x and lambda
+        x = solution(1:n)';
+        lambda = solution(n+1:end)';
+    end
+     
+    if strcmp(type, 'LUdense')
+        % Construct KKT system
+        [K, d] = constructKKTSystem(H, g, A, b);
+        [L,U,p] = lu(K,'vector');
+        solution = U\(L\d(p));   
+        x = solution(1:n)
+        lambda = solution(n+1:end)
+    end
+
+    if strcmp(type, 'LUsparse')
+        % Construct KKT system
+        [K, d] = sparseConstructKKTSystem(H, g, A, b);
+        [L,U,p] = lu(K,'vector');
+        solution = U\(L\d(p));   
+        x = solution(1:n)';
+        lambda = solution(n+1:end)';
+    end 
+
+    if strcmp(type, "RangeSpace")
+        % Cholesky factorization of H
+        R_H = chol(H);
+        
+        % Solve for mu and Hg
+        mu_1 = R_H'\g;
+        Hg = R_H\mu_1;
+        
+        mu_2 = R_H'\A';
+        HA = R_H\mu_2;
+        
+        % Solve the new system
+        lambda = (A*HA) \ (b + A*Hg);
+        
+        % Compute x
+        x = HA*lambda - Hg;
+    end
+
+    if strcmp(type, "NullSpace")
+        % QR factorization of A
+        [Q, R_bar] = qr(A');
+        size_R_bar = size(R_bar, 2);
+        Q_partition1 = Q(:, 1:size_R_bar);
+        Q_partition2 = Q(:, size_R_bar+1:end);
+        R = R_bar(1:size_R_bar, 1:size_R_bar);
+        
+        % Solve for solution vector xy using backward substitution
+        solution_xy = R'\b;
+        
+        % Solve for solution vector xz using a system involving H, Q_partition1, Q_partition2, and g
+        solution_xz = (Q_partition2'*H*Q_partition2)\(-Q_partition2'*(H*Q_partition1*solution_xy + g));
+        
+        % Compute solution vectors x and lambda
+        x = Q_partition1*solution_xy + Q_partition2*solution_xz;
+        lambda = R\(Q_partition1'*(H*x + g));
+    end
+
+end

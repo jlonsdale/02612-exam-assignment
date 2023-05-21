@@ -1,8 +1,5 @@
-function [H, g, A, b, C, dl, du, l, u] = randomQPGenerator(n, density)   
-    m = round(n/2);
-   
-    M = sprand(n, n, density);
-    H = M * M' + 0.001 * eye(n); 
+function [g, A, b, C, dl, du, l, u] = RandomLP(n)   
+    m=round(n);
     g = randn(n, 1); % Generate a random vector g  
     % Generate random matrices A and C
     % Create a full rank A matrix
@@ -15,8 +12,8 @@ function [H, g, A, b, C, dl, du, l, u] = randomQPGenerator(n, density)
     l = -ones(n,1)*2.5;
     u = ones(n,1)*2.5;
 
-    C = sprand(n, m, density);
+    C = rand(n,m);
     % Generate random upper and lower bounds
-    dl = -m*rand(m,1);
-    du = m*rand(m,1);
+    dl = -2.5*rand(m,1);
+    du = 2.5*rand(m,1);
 end
