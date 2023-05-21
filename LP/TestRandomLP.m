@@ -27,8 +27,6 @@ x_bar = [x0; slack0];
 b_bar = [b_eq; dbar; zeros(m_eq, 1)]
 A_bar = full([A_eq, Cbar])
 
-A_bar'*x_bar + b_bar
-
 % Solve the augmented LP problem
 [x2] = linprog(g', [], [], A_bar', -b_bar);
 
